@@ -1,0 +1,34 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write README.md
+/deepseek-harness-linux:
+  en: e660c9fb2a5ae966
+  zh: 456f9c8935ac5d83
+/deepseek-harness-linux/install-and-launch:
+  en: 389da0d1f3d33ffa
+  zh: 2a6ad1dff6c2a883
+/deepseek-harness-linux/automatic-updates:
+  en: f2860d5dc0f2cc70
+  zh: 29a5237bc631dee3
+/deepseek-harness-linux/developer-preview:
+  en: 7d626af64024fb44
+  zh: 4bd08c1652ac169a
+/deepseek-harness-linux/run:
+  en: c4974a68926ca8a5
+  zh: bf7b0331fb62ac5d
+/deepseek-harness-linux/run/run-from-npm:
+  en: afdbdc96b6ace57d
+  zh: 407f0a07681bdd67
+/deepseek-harness-linux/run/run-from-source:
+  en: fffb87f42ab7b09c
+  zh: cdb9e3683523c81b
+/deepseek-harness-linux/support-and-development:
+  en: 959a30f6c406fca2
+  zh: 7149c522672c064f
+/deepseek-harness-linux/citation:
+  en: 3ee4e97587ac3228
+  zh: f3c8b9715ad00e81
+/deepseek-harness-linux/license:
+  en: f370bf50e60d7591
+  zh: ff42d2fc354c5513
