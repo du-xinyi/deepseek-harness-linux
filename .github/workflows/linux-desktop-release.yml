@@ -52,11 +52,17 @@ jobs:
       - name: 构建并验证 Linux 安装包
         run: pnpm --dir apps/desktop run "package:linux:$LINUX_ARCH" --build-version "$BUILD_VERSION"
       - name: 验证更新下载和临时 AppImage 替换
-        run: xvfb-run --auto-servernum node apps/desktop/scripts/test-linux-updates.mjs
+        run: |
+          # Hosted runners restrict unprivileged namespaces; configure Electron's SUID sandbox for this test binary.
+          sandbox="apps/desktop/.desktop-build/targets/linux-$LINUX_ARCH/electron/chrome-sandbox"
+          sudo chown root:root "$sandbox"
+          sudo chmod 4755 "$sandbox"
+          xvfb-run --auto-servernum node apps/desktop/scripts/test-linux-updates.mjs
       - uses: actions/upload-artifact@v7.0.1
         with:
           name: linux-${{ matrix.arch }}
           if-no-files-found: error
+          retention-days: 1
           path: |
             apps/desktop/.desktop-build/targets/linux-${{ matrix.arch }}/unsigned-artifacts/*.AppImage
             apps/desktop/.desktop-build/targets/linux-${{ matrix.arch }}/unsigned-artifacts/*.deb
