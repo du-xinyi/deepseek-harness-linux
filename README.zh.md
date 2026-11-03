@@ -1,5 +1,7 @@
 # DeepSeek Harness
 
+本分支提供 Linux 社区桌面发行版，通过 [GitHub Releases](https://github.com/du-xinyi/deepseek-harness-linux/releases/latest) 分发安装包并支持应用内更新。构建和发布方法见 [Linux 打包说明](apps/desktop/packaging/README.zh.md#local-linux-packages)。
+
 [English](README.md) | 中文
 
 DeepSeek Harness（`dsh`）是由 [DeepSeek AI](https://deepseek.com) 开发的开源 agent harness（智能体框架）。

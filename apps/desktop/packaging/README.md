@@ -20,6 +20,7 @@ Build Desktop installers locally or through Windows or macOS Actions, choose dep
 - [Unsigned Windows test installer](#unsigned-windows-test-installer)
 - [Local macOS DMG without release signing](#local-macos-dmg-without-release-signing)
 - [macOS release signing and diagnostics](#macos-release-signing)
+- [Local Linux packages](#local-linux-packages)
 - [Directory builds and preparation](#directory-and-preparation)
 - [Local Official bundles from a loopback registry](#local-official-bundles-from-a-loopback-registry)
 - [Runtime file selection and installation checks](#runtime-file-selection)
@@ -97,7 +98,7 @@ pnpm run package:desktop:mac:x64
 pnpm run package:desktop:win:x64
 ```
 
-The macOS arm64 command requires Apple Silicon. The macOS x64 command runs on Intel macOS or Apple Silicon with Rosetta. The Windows x64 command requires Windows x64. Linux is not a supported Desktop release target.
+The macOS arm64 command requires Apple Silicon. The macOS x64 command runs on Intel macOS or Apple Silicon with Rosetta. The Windows x64 command requires Windows x64. See [Local Linux packages](#local-linux-packages) for Linux builds; official publication channels remain limited to macOS and Windows.
 
 Both release and local unsigned macOS DMGs use LZMA compression (`dmg.format: 'ULMO'`) in [the electron-builder configuration](../scripts/electron-builder-config.mjs). A [build-time patch](../../../patches/app-builder-lib@26.17.0.patch) adds this format to the pinned builder's validation and TypeScript declarations.
 
@@ -200,6 +201,34 @@ Mac packaging reads these tuning fields from `.env.macos`:
 The proxy fields are independent and reject URL credentials, paths, queries and fragments. Empty values preserve inherited networking. An explicit download proxy replaces child-process proxy variables and bypasses local hosts only; it does not change system settings. Company proxy addresses belong in the ignored local file; see internal documentation for addresses.
 
 Apple tooling uses the active macOS network service's HTTP/HTTPS proxies. Configured notarization routing checks proxy reachability, saves that service's settings, enables the proxy around both artifact lanes, and restores the saved settings after both lanes settle. An originally disabled proxy with an empty server and port zero is restored by disabling it; the temporary server and port may remain stored but inactive. Directory-only builds apply it to App notarization after the signed directory build. This temporarily affects other applications and requires permission to change system proxies; PAC, auto-discovery, SOCKS and authenticated proxy configurations must be disabled first. Packaging and recovery acquire the same per-user POSIX file lock before reading recovery data or changing proxies; process exit releases ownership, while the lock file remains in place. The lock loads `@deepseek-ai/node-addon-system/flock` at first use rather than at script start, so `check:package` and the packaging entry load on a checkout that has not built `native/system`; when the host addon binary or the entry's JavaScript is missing at lock time, the loader runs `pnpm run build:native-system` and `pnpm --dir native/system run build:ts` before locking, so recovery works on such a checkout as well. This prevents overlapping proxy transactions across checkouts; other users and network-setting tools must not change these settings concurrently. SIGINT/SIGTERM wait for active work before restoration. After forced termination or a restoration error, stop any remaining notarization processes and run `pnpm --dir apps/desktop run restore:mac-proxy`; the saved record remains until restoration succeeds. Configuration checks validate URL syntax without changing system settings or contacting the proxy.
+
+<a id="local-linux-packages"></a>
+
+## Local Linux packages
+
+Linux x64 and arm64 packaging requires a Linux host with the matching architecture. Install the locked repository dependencies, then run from the root:
+
+```sh
+pnpm run package:desktop:linux:x64
+```
+
+Use `package:desktop:linux:arm64` on arm64. The command retains the product version, builds the locally branded Electron application with its Node, Python and pnpm payloads, and creates AppImage and `.deb` files; it neither reads publication credentials nor uploads artifacts. Outputs live under `apps/desktop/.desktop-build/targets/linux-<arch>/unsigned-artifacts/`. Append `:dir` to produce a directly runnable `linux-unpacked` directory. AppImage requires FUSE 2; systems without FUSE can launch with `--appimage-extract-and-run`. Keep the Chromium sandbox enabled.
+
+Linux Office previews use the bundled WASM engine. A runtime-only LibreOfficeKit patch preserves engine fallback when Electron ASAR reports a missing directory as `null`. Linux uses a community GitHub Releases update feed and has no in-app CLI registration menu. Closing the window uses normal quit and task confirmation. Packaging needs network access for locked resources; build tools are Node.js, pnpm, Git, a C/C++ compiler, make, Python 3, tar and unzip.
+
+### Linux automatic updates and publication
+
+The default generic feed is `https://github.com/du-xinyi/deepseek-harness-linux/releases/latest/download/`. `DSH_DESKTOP_LINUX_UPDATE_URL` selects another HTTPS directory; HTTP is accepted only on loopback for local checks. The packaged `app-update.yml` seals that address and the selected `DSH_DESKTOP_UPDATE_CHANNEL` (`nightly` by default). Checks do not download software. The user starts a download, then separately confirms installation; active tasks use the existing shutdown confirmation.
+
+AppImage replaces its own file and relaunches, so the file and its directory must be writable. deb uses the system authorization dialog and package manager. An AppImage always selects the AppImage updater even when a combined build carries deb metadata. The first previous Linux package without updater support requires one manual installation of this edition. Real download and temporary AppImage replacement checks run with `pnpm --dir apps/desktop run test:updates:linux` after building and preparing the runtime; they never install a system package.
+
+Build each new release with a higher version extending the product version:
+
+```sh
+pnpm run package:desktop:linux:x64 --build-version 0.2.2-alpha.2.linux.1
+```
+
+Publish the generated AppImage, deb and `nightly-linux.yml` together as a GitHub Release; arm64 uses `nightly-linux-arm64.yml`. The manifests include each artifact’s SHA-512. Mark the GitHub Release as latest and not as a GitHub prerelease so the fixed feed URL resolves, even when the application semantic version contains a prerelease field. The manual `Linux Desktop release` Actions workflow builds and verifies both native architectures, then publishes the complete batch. It requires no long-lived upload secret; its publication job uses a repository-scoped `GITHUB_TOKEN` with `contents: write`.
 
 <a id="directory-and-preparation"></a>
 

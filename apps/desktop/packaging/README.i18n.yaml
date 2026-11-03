@@ -12,8 +12,8 @@
   en: e98e516b9e1bd0f4
   zh: 1a2abd7d89ef78a1
 /desktop-packaging/table-of-contents:
-  en: a6203dc2e690c7e1
-  zh: 07b516549b8e3328
+  en: e2f60e5f34704e43
+  zh: 9255bbb54d17aa3c
 /desktop-packaging/choose-a-build-path:
   en: 0b35c7471c09b27a
   zh: cc4a382b99fc3210
@@ -21,8 +21,8 @@
   en: 3f38ab26ee195b39
   zh: f00eddafa8f3b9ca
 /desktop-packaging/configuration-and-local-builds:
-  en: 5b4f0f80a117f202
-  zh: ff05be196c181087
+  en: f1bd74ab0dac8894
+  zh: 7ae77667d92177c8
 /desktop-packaging/windows-actions-packaging:
   en: 253e17998951931c
   zh: b582b377391d2ec2
@@ -36,8 +36,14 @@
   en: 2feaa0412247d81f
   zh: 461dde8e13fd4734
 /desktop-packaging/macos-release-signing-and-diagnostics:
-  en: 29fa6bd8919f3ec0
-  zh: 9e31e037fa3d9378
+  en: 4b70fa0be1239a2b
+  zh: 1264a7320b9c4875
+/desktop-packaging/local-linux-packages:
+  en: ded19a5deea9b7fa
+  zh: 13e3dc8e8afec62a
+/desktop-packaging/local-linux-packages/linux-automatic-updates-and-publication:
+  en: 6be9d99a9afd8cba
+  zh: fe665f0105f7209c
 /desktop-packaging/directory-builds-and-preparation:
   en: 5860c306375ddd63
   zh: a76e3cdbbe25c79e

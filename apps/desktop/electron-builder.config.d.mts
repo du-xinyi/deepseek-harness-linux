@@ -14,7 +14,13 @@ export interface DesktopElectronBuilderConfig {
     { readonly from: string, readonly to: 'dsh', readonly filter: readonly ['**/*'] },
     { readonly from: string, readonly to: 'dsh/node_modules', readonly filter: readonly ['**/*'] },
   ]
-  readonly extraMetadata: { readonly dshDesktopAppId: string }
+  readonly extraMetadata: {
+    readonly dshDesktopAppId: string
+    readonly dshDesktopUpdateChannel: 'nightly' | 'latest'
+    readonly version?: string
+    readonly homepage?: string
+    readonly desktopName?: 'deepseek-harness.desktop'
+  }
   readonly asarUnpack: readonly string[]
   readonly extraResources: readonly [
     { readonly from: string, readonly to: 'runtime' },
@@ -38,6 +44,14 @@ export interface DesktopElectronBuilderConfig {
     readonly sign: boolean
     readonly writeUpdateInfo: boolean
   }
+  readonly linux: {
+    readonly executableName: 'deepseek-harness'
+    readonly icon: string
+    readonly category: 'Development'
+    readonly target: readonly ['AppImage', 'deb']
+    readonly desktop: { readonly entry: { readonly StartupWMClass: 'deepseek-harness', readonly MimeType: string } }
+  }
+  readonly deb: { readonly maintainer: string }
   readonly win: {
     readonly forceCodeSigning: boolean
     readonly signtoolOptions: {
@@ -60,7 +74,8 @@ export interface DesktopElectronBuilderConfig {
   readonly afterPack: (context: AfterPackContext) => Promise<void>
   readonly afterSign: (context: AfterPackContext) => Promise<void>
   readonly artifactBuildCompleted: (artifact: { readonly file: string }) => Promise<void> | undefined
-  readonly publish: readonly [{ readonly provider: 'generic', readonly url: string }] | null
+  readonly detectUpdateChannel: false
+  readonly publish: readonly [{ readonly provider: 'generic', readonly url: string, readonly channel: 'nightly' | 'latest' }] | null
 }
 
 /**

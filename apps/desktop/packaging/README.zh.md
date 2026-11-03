@@ -20,6 +20,7 @@ description: "在本地或 Windows／macOS Actions 中生成 Desktop 安装包�
 - [未签名 Windows 测试安装包](#unsigned-windows-test-installer)
 - [无发布签名的本地 macOS DMG](#local-macos-dmg-without-release-signing)
 - [macOS 发布签名与诊断](#macos-release-signing)
+- [Linux 本地桌面包](#local-linux-packages)
 - [目录构建与准备](#directory-and-preparation)
 - [用回环 registry 安装本地 Official 包](#local-official-bundles-from-a-loopback-registry)
 - [运行时文件筛选与安装检查](#runtime-file-selection)
@@ -97,7 +98,7 @@ pnpm run package:desktop:mac:x64
 pnpm run package:desktop:win:x64
 ```
 
-macOS arm64 命令要求 Apple Silicon。macOS x64 命令可以在 Intel macOS 或带 Rosetta 的 Apple Silicon 上运行。Windows x64 命令要求 Windows x64。Linux 不是受支持的 Desktop 发布目标。
+macOS arm64 命令要求 Apple Silicon。macOS x64 命令可以在 Intel macOS 或带 Rosetta 的 Apple Silicon 上运行。Windows x64 命令要求 Windows x64。Linux 本地打包见 [Linux 本地桌面包](#local-linux-packages)；官方发布渠道仍只覆盖 macOS 和 Windows。
 
 macOS 正式发布和本地未签名 DMG 都通过 [electron-builder 配置](../scripts/electron-builder-config.mjs)中的 `dmg.format: 'ULMO'` 使用 LZMA 压缩。[构建时补丁](../../../patches/app-builder-lib@26.17.0.patch)为固定版本 builder 的校验规则和 TypeScript 声明添加此格式。
 
@@ -200,6 +201,34 @@ Mac 打包从 `.env.macos` 读取以下调优字段：
 两个代理字段互相独立，拒绝 URL 中的凭证、路径、查询参数和片段。空值沿用继承的网络设置。显式下载代理会替换子进程的代理变量，仅绕过本地主机；它不修改系统设置。公司代理地址仅写入 Git 忽略的本地文件；具体地址参见内部文档。
 
 Apple 工具使用 macOS 当前活动网络服务的 HTTP/HTTPS 代理。配置公证代理后，打包会检查代理可达性、保存该服务的设置，在两条产物任务期间启用代理，并在两条任务均结束后恢复原设置。对于原本关闭、服务器为空且端口为零的代理，恢复时仅关闭代理；临时服务器和端口可能保留，但不生效。仅生成目录的打包会在签名目录构建完成后的 App 公证期间启用代理。这会临时影响其他应用，并要求修改系统代理的权限；必须先禁用 PAC、自动发现、SOCKS 及需要认证的代理配置。打包和恢复在读取恢复记录或修改代理前获取同一个用户级 POSIX 文件锁；进程退出会释放锁的持有权，锁文件保留。该锁在首次使用时才加载 `@deepseek-ai/node-addon-system/flock`，而不是在脚本启动时加载，因此 `check:package` 和打包入口在未构建 `native/system` 的 checkout 上也能加载；加锁时若宿主 addon 二进制或入口的 JavaScript 缺失，加载器会先运行 `pnpm run build:native-system` 和 `pnpm --dir native/system run build:ts` 再加锁，因此恢复命令在这样的 checkout 上同样可用。这会阻止不同 checkout 的代理事务重叠；其他用户及网络设置工具不得同时修改这些设置。SIGINT/SIGTERM 会等待活动任务结束后恢复。强制终止或恢复失败后，先停止残留公证进程，再运行 `pnpm --dir apps/desktop run restore:mac-proxy`；保存的记录会保留到恢复成功。配置检查仅验证 URL 语法，不修改系统设置或连接代理。
+
+<a id="local-linux-packages"></a>
+
+## Linux 本地桌面包
+
+Linux x64 和 arm64 使用匹配架构的 Linux 主机打包。安装仓库锁定依赖后，在根目录运行：
+
+```sh
+pnpm run package:desktop:linux:x64
+```
+
+arm64 主机使用 `package:desktop:linux:arm64`。命令沿用当前产品版本，构建本地品牌的 Electron 应用及配套 Node、Python 和 pnpm，生成 AppImage 和 `.deb`；不读取发布凭据，也不上传产物。输出位于 `apps/desktop/.desktop-build/targets/linux-<arch>/unsigned-artifacts/`。添加 `:dir` 可生成可直接运行的 `linux-unpacked` 目录。AppImage 运行依赖 FUSE 2；没有 FUSE 的系统可用 `--appimage-extract-and-run` 启动。不要禁用 Chromium sandbox。
+
+Linux 的 Office 预览使用内置 WASM 引擎。LibreOfficeKit 的 runtime-only 补丁兼容 Electron ASAR 对缺失目录返回 `null`，保留正常的引擎回退。Linux 使用社区 GitHub Releases 更新源，不提供应用内 CLI 注册菜单。关闭窗口会走正常退出及任务确认。打包需要网络以下载锁定资源；构建工具为 Node.js、pnpm、Git、C/C++ 编译器、make、Python 3、tar 和 unzip。
+
+### Linux 自动更新与发布
+
+默认 generic 更新源为 `https://github.com/du-xinyi/deepseek-harness-linux/releases/latest/download/`。可通过 `DSH_DESKTOP_LINUX_UPDATE_URL` 选择其他 HTTPS 目录；HTTP 仅允许回环地址，用于本地验证。安装包的 `app-update.yml` 固定该地址及 `DSH_DESKTOP_UPDATE_CHANNEL`（默认 `nightly`）。检查更新不会下载软件，用户先触发下载，再单独确认安装；存在运行中任务时沿用现有退出确认。
+
+AppImage 替换自身文件后重启，因此文件和所在目录必须可写。deb 通过系统授权对话框和包管理器安装。即使混合构建携带 deb 元数据，AppImage 仍始终选择 AppImage 更新器。此前没有更新能力的首个 Linux 包需要手动安装一次本版。完成构建和运行时准备后，可用 `pnpm --dir apps/desktop run test:updates:linux` 验证真实下载和临时 AppImage 替换；该检查不会安装系统软件包。
+
+每次发布都使用扩展产品版本且高于已发布版本的完整版本号：
+
+```sh
+pnpm run package:desktop:linux:x64 --build-version 0.2.2-alpha.2.linux.1
+```
+
+将生成的 AppImage、deb 和 `nightly-linux.yml` 一起发布到 GitHub Release；arm64 使用 `nightly-linux-arm64.yml`。清单包含各产物的 SHA-512。GitHub Release 需标为 latest，且不要勾选 GitHub 的 prerelease，确保固定更新地址可达，即使应用语义版本包含预发布字段。手动触发 `Linux Desktop release` Actions 工作流会在两种原生架构上构建并验证，再发布完整批次。无需长期上传密钥，发布 job 使用当前仓库范围、具有 `contents: write` 的 `GITHUB_TOKEN`。
 
 <a id="directory-and-preparation"></a>
 

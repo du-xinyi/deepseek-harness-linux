@@ -9,7 +9,10 @@ import type { DesktopUpdateState } from './ipc.ts'
 import { DesktopUpdateHttpExecutor } from './update-http-executor.ts'
 import { DesktopUpdatePreparationError } from './update-error.ts'
 
-const { autoUpdater } = electronUpdater
+// A combined AppImage/deb build can carry the deb package-type marker inside both outputs.
+// The AppImage runtime identifies its own package before the library consults that marker.
+const autoUpdater = process.platform === 'linux' && process.env.APPIMAGE !== undefined
+  ? new electronUpdater.AppImageUpdater() : electronUpdater.autoUpdater
 
 /** Owns one updater target until its download and installation settle. */
 export class DesktopUpdateCoordinator {

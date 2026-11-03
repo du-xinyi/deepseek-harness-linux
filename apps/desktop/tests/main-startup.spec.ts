@@ -181,6 +181,7 @@ const harness = await vi.hoisted(async () => {
     getVersion: () => '1.0.0',
     getAppPath: (): string => 'desktop-test-app',
     setAppLogsPath: vi.fn(),
+    setDesktopName: vi.fn(),
     getPath: vi.fn<(name: string) => string>(),
     setAboutPanelOptions: vi.fn<(options: Electron.AboutPanelOptionsOptions) => void>(),
     requestSingleInstanceLock: () => true,
@@ -565,7 +566,8 @@ describe('desktop main startup', () => {
     expect(visible.map(item => item.role === 'quit' ? 'quit' : item.label ?? item.type)).toEqual([
       messages.aboutMenu, 'separator', messages.checkUpdatesMenu,
       ...platform === 'linux' ? [] : [messages.cliCommandMenu],
-      'separator', ...packaged ? [] : [messages.reloadPageMenu, messages.restartAppHostMenu],
+      'separator',
+      ...packaged ? [] : [messages.reloadPageMenu, messages.restartAppHostMenu],
       messages.toggleDevToolsMenu, 'separator',
       ...platform === 'darwin' ? [messages.hideApplication, messages.hideOtherApplications, messages.showAllApplications, 'separator'] : [],
       'quit',
@@ -1346,6 +1348,30 @@ describe('desktop main startup', () => {
     host.exited.resolve()
     await harness.quitCompleted.promise
     expect(harness.trays[0]!.destroy).toHaveBeenCalledOnce()
+  })
+
+  it('quits a Linux workspace on close and lets running tasks cancel the exit', async () => {
+    vi.stubGlobal('process', { ...process, platform: 'linux' })
+    const host = await readyWorkspace()
+    const window = harness.windows[0]!
+    expect(harness.app.setDesktopName).toHaveBeenCalledWith('deepseek-harness.desktop')
+    expect(harness.trays).toHaveLength(0)
+    host.inspectQuit.mockResolvedValue({ activeTasks: true, scheduledTasks: false })
+    harness.dialog.showMessageBox.mockResolvedValue({ response: 1, checkboxChecked: false })
+    window.close()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(harness.app.quit).toHaveBeenCalledOnce()
+    expect(harness.dialog.showMessageBox).toHaveBeenCalledWith(expect.objectContaining({ detail: en.quitActiveTasks }))
+    expect(window.hide).not.toHaveBeenCalled()
+    expect(window.isDestroyed()).toBe(false)
+    expect(host.stop).not.toHaveBeenCalled()
+    harness.dialog.showMessageBox.mockResolvedValue({ response: 0, checkboxChecked: false })
+    window.close()
+    await vi.advanceTimersByTimeAsync(0)
+    await host.stopping.promise
+    host.exited.resolve()
+    await harness.quitCompleted.promise
+    expect(window.hide).toHaveBeenCalledOnce()
   })
 
   it('routes closing through the tray confirmation and keeps the Host running', async () => {

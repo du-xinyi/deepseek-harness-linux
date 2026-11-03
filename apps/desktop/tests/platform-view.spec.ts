@@ -45,13 +45,13 @@ afterEach(() => {
   state.views.length = 0; state.sessions.length = 0; state.loadFailure = undefined; state.loadBarrier = undefined
   vi.clearAllMocks(); vi.unstubAllEnvs()
 })
-function setup() {
+function setup(platform: 'darwin' | 'win32' | null = 'darwin') {
   let blocked = false
   const removeChildView = vi.fn()
   const owner = Object.assign(new EventEmitter(), {
     webContents: new EventEmitter(), contentView: { addChildView: vi.fn(), removeChildView }, isDestroyed: () => false,
   })
-  const manager = new DesktopPlatformView('/bundled/preload.cjs', () => 'en_US', 'darwin', () => blocked)
+  const manager = new DesktopPlatformView('/bundled/preload.cjs', () => 'en_US', platform, () => blocked)
   manager.setSession({ origin: 'https://platform.deepseek.com', userId: 'fixture-user' as AccountUserId, token: 'fixture-secret' })
   return { manager, owner, removeChildView, block: () => { blocked = true } }
 }
@@ -134,21 +134,22 @@ it('blocks cross-origin navigation and redirects', async () => {
   manager.close()
 })
 
-it('injects the deployment and client identity headers only at the Platform origin', async () => {
-  const { manager, owner } = setup()
-  manager.setSession({ origin: 'https://platform.deepseek.com', userId: null, token: 'fixture-secret',
-    requestHeaders: { cookie: 'gate=synthetic', 'x-deployment': 'harness' } })
-  await manager.open(owner, 'usage', bounds)
-  const request = { Cookie: 'route=user', 'x-client-platform': 'stale', 'x-deployment': 'stale' }
-  expect(interceptHeaders(1, 'https://platform.deepseek.com/api/v0/users/current', request)).toEqual({
-    'x-deployment': 'harness', cookie: 'route=user; gate=synthetic', 'x-client-bundle-id': '',
-    'x-client-platform': 'desktop-mac', 'x-client-version': '1.2.3', 'x-client-locale': 'en_US',
-    'x-client-timezone-offset': String(-new Date().getTimezoneOffset() * 60),
+it.each([['darwin', 'desktop-mac'], ['win32', 'desktop-win'], [null, 'web']] as const)(
+  'injects the deployment and client identity headers only at the Platform origin (%s)', async (platform, identity) => {
+    const { manager, owner } = setup(platform)
+    manager.setSession({ origin: 'https://platform.deepseek.com', userId: null, token: 'fixture-secret',
+      requestHeaders: { cookie: 'gate=synthetic', 'x-deployment': 'harness' } })
+    await manager.open(owner, 'usage', bounds)
+    const request = { Cookie: 'route=user', 'x-client-platform': 'stale', 'x-deployment': 'stale' }
+    expect(interceptHeaders(1, 'https://platform.deepseek.com/api/v0/users/current', request)).toEqual({
+      'x-deployment': 'harness', cookie: 'route=user; gate=synthetic', 'x-client-bundle-id': '',
+      'x-client-platform': identity, 'x-client-version': '1.2.3', 'x-client-locale': 'en_US',
+      'x-client-timezone-offset': String(-new Date().getTimezoneOffset() * 60),
+    })
+    // A redirect to another origin keeps the injected headers out of the follow-up request.
+    expect(interceptHeaders(1, 'https://login.example.com/authorize', request)).toEqual({})
+    manager.close()
   })
-  // A redirect to another origin keeps the injected headers out of the follow-up request.
-  expect(interceptHeaders(1, 'https://login.example.com/authorize', request)).toEqual({})
-  manager.close()
-})
 
 it('samples the language and UTC offset on every Platform request', async () => {
   let locale: 'en_US' | 'zh_CN' = 'en_US'

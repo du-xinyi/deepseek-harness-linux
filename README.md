@@ -1,5 +1,7 @@
 # DeepSeek Harness
 
+This fork provides community Linux desktop packages with in-app updates through [GitHub Releases](https://github.com/du-xinyi/deepseek-harness-linux/releases/latest). See [Linux packaging](apps/desktop/packaging/README.md#local-linux-packages) for builds and publication.
+
 English | [中文](README.zh.md)
 
 DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).

@@ -1,4 +1,7 @@
 import { EventEmitter } from 'node:events'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AppUpdater } from 'electron-updater'
 import { DESKTOP_HOST_PROTOCOL_VERSION } from '../src/host-protocol.ts'
@@ -7,9 +10,13 @@ import type { DesktopUpdateState } from '../src/ipc.ts'
 import { DesktopUpdatePreparationError } from '../src/update-error.ts'
 import { zh } from '../src/locale.ts'
 
-vi.mock('electron', () => ({ app: { isPackaged: false } }))
+const nativeUpdater = vi.hoisted(() => ({ appImage: vi.fn(), system: vi.fn(), packaged: false }))
+vi.mock('electron', () => ({ app: { get isPackaged() { return nativeUpdater.packaged }, getVersion: () => '1.0.0' } }))
 vi.mock('electron-updater', () => ({
-  default: { autoUpdater: { autoDownload: true, autoInstallOnAppQuit: true } },
+  default: {
+    get autoUpdater() { nativeUpdater.system(); return { autoDownload: true, autoInstallOnAppQuit: true } },
+    AppImageUpdater: class extends EventEmitter { constructor() { super(); nativeUpdater.appImage() } },
+  },
 }))
 
 const { DesktopUpdateCoordinator } = await import('../src/update-coordinator.ts')
@@ -45,7 +52,11 @@ describe('desktop release metadata', () => {
 })
 
 const coordinators: InstanceType<typeof DesktopUpdateCoordinator>[] = []
-afterEach(() => { for (const item of coordinators.splice(0)) item.dispose() })
+afterEach(() => {
+  for (const item of coordinators.splice(0)) item.dispose()
+  nativeUpdater.packaged = false
+  vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks()
+})
 
 function fixture(channel: 'nightly' | 'latest' = 'nightly', version = '1.1.0-alpha.1') {
   const events = new EventEmitter()
@@ -73,6 +84,37 @@ function fixture(channel: 'nightly' | 'latest' = 'nightly', version = '1.1.0-alp
 }
 
 describe('desktop update coordinator', () => {
+  it.each([false, true])('checks the Linux feed only with packaged update metadata (%s)', async (hasFeed) => {
+    const directory = mkdtempSync(join(tmpdir(), 'dsh-linux-update-'))
+    vi.stubGlobal('process', { ...process, platform: 'linux', resourcesPath: directory })
+    nativeUpdater.packaged = true
+    if (hasFeed) writeFileSync(join(directory, 'app-update.yml'), 'provider: generic\nurl: https://example.test/linux/\n')
+    const events = new EventEmitter()
+    const checkForUpdates = vi.fn(async () => ({ isUpdateAvailable: true, updateInfo: { version: '1.1.0-rc.2' } }))
+    const updater = Object.assign(events, { checkForUpdates }) as unknown as AppUpdater
+    const coordinator = new DesktopUpdateCoordinator(state => state, async () => true, updater)
+    coordinators.push(coordinator)
+    try {
+      expect(await coordinator.check(true)).toMatchObject(hasFeed
+        ? { phase: 'available', version: '1.1.0-rc.2' }
+        : { phase: 'error', failedOperation: 'check', message: 'desktop update: this application has no packaged update source' })
+      expect(checkForUpdates).toHaveBeenCalledTimes(hasFeed ? 1 : 0)
+    } finally { rmSync(directory, { recursive: true, force: true }) }
+  })
+
+  it.each([undefined, '/home/fixture/DeepSeek-Harness.AppImage'])(
+    'selects the AppImage updater before package-type detection when APPIMAGE=%s', async (appImage) => {
+      vi.stubGlobal('process', { ...process, platform: 'linux' })
+      vi.stubEnv('APPIMAGE', appImage)
+      vi.resetModules()
+      nativeUpdater.appImage.mockClear()
+      nativeUpdater.system.mockClear()
+      await import('../src/update-coordinator.ts')
+      expect(nativeUpdater.appImage).toHaveBeenCalledTimes(appImage === undefined ? 0 : 1)
+      expect(nativeUpdater.system).toHaveBeenCalledTimes(appImage === undefined ? 1 : 0)
+    },
+  )
+
   it.each(['stop-failed', 'fullscreen-timeout'] as const)('keeps safe %s diagnostics separate and clears them on an explicit retry', async (kind) => {
     const f = fixture()
     await f.coordinator.check()
