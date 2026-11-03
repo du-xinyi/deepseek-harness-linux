@@ -51,7 +51,12 @@ jobs:
           sudo apt-get install -y libgtk-3-0 libnss3 libasound2t64 libgbm1 libxss1 xvfb
       - run: pnpm install --frozen-lockfile
       - name: 构建并验证 Linux 安装包
-        run: pnpm --dir apps/desktop run "package:linux:$LINUX_ARCH" --build-version "$BUILD_VERSION"
+        run: |
+          pnpm --dir apps/desktop run "package:linux:$LINUX_ARCH" --build-version "$BUILD_VERSION"
+          for package in apps/desktop/.desktop-build/targets/linux-$LINUX_ARCH/unsigned-artifacts/*.deb
+          do
+            dpkg-deb --contents "$package" | python3 -c 'import sys; assert "/usr/share/icons/hicolor/48x48/apps/deepseek-harness.png" in sys.stdin.read(), "deb lacks a standard launcher icon"'
+          done
       - name: 验证 deb 更新下载与安装确认
         run: |
           # Hosted runners restrict unprivileged namespaces; configure Electron's SUID sandbox for this test binary.

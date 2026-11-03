@@ -260,7 +260,7 @@ export function createElectronBuilderConfig(
     },
     linux: {
       executableName: 'deepseek-harness',
-      icon: fileURLToPath(new URL('../resources/icon.png', import.meta.url)),
+      icon: join(buildPaths.root, 'icons'),
       category: 'Development',
       target: ['deb'],
       desktop: { entry: { StartupWMClass: 'deepseek-harness', MimeType: 'x-scheme-handler/dsh;' } },

@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { expect, it } from 'vitest'
 import { resolveLinuxPackageTarget } from '../scripts/package-linux.ts'
 import { createElectronBuilderConfig } from '../scripts/electron-builder-config.mjs'
@@ -7,7 +8,8 @@ it.each(['x64', 'arm64'] as const)('selects a native Linux %s package', (arch) =
   expect(resolveLinuxPackageTarget(undefined, 'linux', arch)).toBe(`linux-${arch}`)
   const config = createElectronBuilderConfig({ DSH_DESKTOP_APP_ID: 'com.deepseek.harness' }, 'linux', arch)
   expect(config.linux).toMatchObject({ executableName: 'deepseek-harness', target: ['deb'] })
-  expect(config.directories.output).toContain(`linux-${arch}/unsigned-artifacts`)
+  expect(config.linux.icon).toContain(join(`linux-${arch}`, 'icons'))
+  expect(config.directories.output).toContain(join(`linux-${arch}`, 'unsigned-artifacts'))
   expect(config.publish).toEqual([{ provider: 'generic', url: DEFAULT_LINUX_UPDATE_URL, channel: 'nightly' }])
   expect(config.extraMetadata).not.toHaveProperty('dshMandatoryUpdatePolicy')
 })

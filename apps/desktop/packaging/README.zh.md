@@ -212,7 +212,7 @@ Linux x64 和 arm64 使用匹配架构的 Linux 主机打包。安装仓库锁�
 pnpm run package:desktop:linux:x64
 ```
 
-arm64 主机使用 `package:desktop:linux:arm64`。命令沿用当前产品版本，构建本地品牌的 Electron 应用及配套 Node、Python 和 pnpm，生成 `.deb`；不读取发布凭据，也不上传产物。输出位于 `apps/desktop/.desktop-build/targets/linux-<arch>/unsigned-artifacts/`。添加 `:dir` 可生成可直接运行的 `linux-unpacked` 目录。
+arm64 主机使用 `package:desktop:linux:arm64`。命令沿用当前产品版本，构建本地品牌的 Electron 应用及配套 Node、Python 和 pnpm，生成 `.deb`；不读取发布凭据，也不上传产物。输出位于 `apps/desktop/.desktop-build/targets/linux-<arch>/unsigned-artifacts/`。添加 `:dir` 可生成可直接运行的 `linux-unpacked` 目录。打包过程会将共用图标素材渲染为 16 到 512 像素的标准 hicolor 尺寸，供 Linux 应用菜单识别。
 
 Linux 的 Office 预览使用内置 WASM 引擎。LibreOfficeKit 的 runtime-only 补丁兼容 Electron ASAR 对缺失目录返回 `null`，保留正常的引擎回退。Linux 使用社区 GitHub Releases 更新源，不提供应用内 CLI 注册菜单。关闭窗口会走正常退出及任务确认。打包需要网络以下载锁定资源；构建工具为 Node.js、pnpm、Git、C/C++ 编译器、make、Python 3、tar 和 unzip。
 

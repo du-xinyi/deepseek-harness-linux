@@ -212,7 +212,7 @@ Linux x64 and arm64 packaging requires a Linux host with the matching architectu
 pnpm run package:desktop:linux:x64
 ```
 
-Use `package:desktop:linux:arm64` on arm64. The command retains the product version, builds the locally branded Electron application with its Node, Python and pnpm payloads, and creates `.deb` files; it neither reads publication credentials nor uploads artifacts. Outputs live under `apps/desktop/.desktop-build/targets/linux-<arch>/unsigned-artifacts/`. Append `:dir` to produce a directly runnable `linux-unpacked` directory.
+Use `package:desktop:linux:arm64` on arm64. The command retains the product version, builds the locally branded Electron application with its Node, Python and pnpm payloads, and creates `.deb` files; it neither reads publication credentials nor uploads artifacts. Outputs live under `apps/desktop/.desktop-build/targets/linux-<arch>/unsigned-artifacts/`. Append `:dir` to produce a directly runnable `linux-unpacked` directory. Packaging renders the shared icon artwork at standard hicolor sizes from 16 through 512 pixels, so Linux application menus can resolve the installed icon.
 
 Linux Office previews use the bundled WASM engine. A runtime-only LibreOfficeKit patch preserves engine fallback when Electron ASAR reports a missing directory as `null`. Linux uses a community GitHub Releases update feed and has no in-app CLI registration menu. Closing the window uses normal quit and task confirmation. Packaging needs network access for locked resources; build tools are Node.js, pnpm, Git, a C/C++ compiler, make, Python 3, tar and unzip.
 
