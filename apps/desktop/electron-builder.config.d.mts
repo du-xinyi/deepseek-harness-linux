@@ -48,7 +48,7 @@ export interface DesktopElectronBuilderConfig {
     readonly executableName: 'deepseek-harness'
     readonly icon: string
     readonly category: 'Development'
-    readonly target: readonly ['AppImage', 'deb']
+    readonly target: readonly ['deb']
     readonly desktop: { readonly entry: { readonly StartupWMClass: 'deepseek-harness', readonly MimeType: string } }
   }
   readonly deb: { readonly maintainer: string }

@@ -6,7 +6,7 @@ import { DEFAULT_LINUX_UPDATE_URL } from '../scripts/linux-update-config.mjs'
 it.each(['x64', 'arm64'] as const)('selects a native Linux %s package', (arch) => {
   expect(resolveLinuxPackageTarget(undefined, 'linux', arch)).toBe(`linux-${arch}`)
   const config = createElectronBuilderConfig({ DSH_DESKTOP_APP_ID: 'com.deepseek.harness' }, 'linux', arch)
-  expect(config.linux).toMatchObject({ executableName: 'deepseek-harness', target: ['AppImage', 'deb'] })
+  expect(config.linux).toMatchObject({ executableName: 'deepseek-harness', target: ['deb'] })
   expect(config.directories.output).toContain(`linux-${arch}/unsigned-artifacts`)
   expect(config.publish).toEqual([{ provider: 'generic', url: DEFAULT_LINUX_UPDATE_URL, channel: 'nightly' }])
   expect(config.extraMetadata).not.toHaveProperty('dshMandatoryUpdatePolicy')

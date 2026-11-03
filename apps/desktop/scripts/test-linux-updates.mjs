@@ -1,4 +1,4 @@
-/** Run real Linux updater checks without installing a system package or changing user profiles. */
+/** Run real Linux deb updater checks without installing a system package or changing user profiles. */
 import { spawn } from 'node:child_process'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'

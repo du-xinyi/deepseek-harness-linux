@@ -212,7 +212,7 @@ Linux x64 和 arm64 使用匹配架构的 Linux 主机打包。安装仓库锁�
 pnpm run package:desktop:linux:x64
 ```
 
-arm64 主机使用 `package:desktop:linux:arm64`。命令沿用当前产品版本，构建本地品牌的 Electron 应用及配套 Node、Python 和 pnpm，生成 AppImage 和 `.deb`；不读取发布凭据，也不上传产物。输出位于 `apps/desktop/.desktop-build/targets/linux-<arch>/unsigned-artifacts/`。添加 `:dir` 可生成可直接运行的 `linux-unpacked` 目录。AppImage 运行依赖 FUSE 2；没有 FUSE 的系统可用 `--appimage-extract-and-run` 启动。不要禁用 Chromium sandbox。
+arm64 主机使用 `package:desktop:linux:arm64`。命令沿用当前产品版本，构建本地品牌的 Electron 应用及配套 Node、Python 和 pnpm，生成 `.deb`；不读取发布凭据，也不上传产物。输出位于 `apps/desktop/.desktop-build/targets/linux-<arch>/unsigned-artifacts/`。添加 `:dir` 可生成可直接运行的 `linux-unpacked` 目录。
 
 Linux 的 Office 预览使用内置 WASM 引擎。LibreOfficeKit 的 runtime-only 补丁兼容 Electron ASAR 对缺失目录返回 `null`，保留正常的引擎回退。Linux 使用社区 GitHub Releases 更新源，不提供应用内 CLI 注册菜单。关闭窗口会走正常退出及任务确认。打包需要网络以下载锁定资源；构建工具为 Node.js、pnpm、Git、C/C++ 编译器、make、Python 3、tar 和 unzip。
 
@@ -220,7 +220,7 @@ Linux 的 Office 预览使用内置 WASM 引擎。LibreOfficeKit 的 runtime-onl
 
 默认 generic 更新源为 `https://github.com/du-xinyi/deepseek-harness-linux/releases/latest/download/`。可通过 `DSH_DESKTOP_LINUX_UPDATE_URL` 选择其他 HTTPS 目录；HTTP 仅允许回环地址，用于本地验证。安装包的 `app-update.yml` 固定该地址及 `DSH_DESKTOP_UPDATE_CHANNEL`（默认 `nightly`）。检查更新不会下载软件，用户先触发下载，再单独确认安装；存在运行中任务时沿用现有退出确认。
 
-AppImage 替换自身文件后重启，因此文件和所在目录必须可写。deb 通过系统授权对话框和包管理器安装。即使混合构建携带 deb 元数据，AppImage 仍始终选择 AppImage 更新器。此前没有更新能力的首个 Linux 包需要手动安装一次本版。完成构建和运行时准备后，可用 `pnpm --dir apps/desktop run test:updates:linux` 验证真实下载和临时 AppImage 替换；该检查不会安装系统软件包。
+Linux 使用 deb 更新器，通过系统授权对话框和包管理器安装。此前没有更新能力的首个 Linux 包需要手动安装一次本版。完成构建和运行时准备后，可用 `pnpm --dir apps/desktop run test:updates:linux` 验证真实 deb 下载和安装确认；该检查不会安装系统软件包。
 
 每次发布都使用扩展产品版本且高于已发布版本的完整版本号：
 
@@ -228,7 +228,7 @@ AppImage 替换自身文件后重启，因此文件和所在目录必须可写�
 pnpm run package:desktop:linux:x64 --build-version 0.2.2-alpha.2.linux.1
 ```
 
-将生成的 AppImage、deb 和 `nightly-linux.yml` 一起发布到 GitHub Release；arm64 使用 `nightly-linux-arm64.yml`。清单包含各产物的 SHA-512。GitHub Release 需标为 latest，且不要勾选 GitHub 的 prerelease，确保固定更新地址可达，即使应用语义版本包含预发布字段。手动触发 `Linux Desktop release` Actions 工作流会在两种原生架构上构建并验证，再发布完整批次。无需长期上传密钥，发布 job 使用当前仓库范围、具有 `contents: write` 的 `GITHUB_TOKEN`。
+将生成的 deb 和 `nightly-linux.yml` 一起发布到 GitHub Release；arm64 使用 `nightly-linux-arm64.yml`。清单包含各产物的 SHA-512。GitHub Release 需标为 latest，且不要勾选 GitHub 的 prerelease，确保固定更新地址可达，即使应用语义版本包含预发布字段。手动触发 `Linux Desktop release` Actions 工作流会在两种原生架构上构建并验证，再发布完整批次。无需长期上传密钥，发布 job 使用当前仓库范围、具有 `contents: write` 的 `GITHUB_TOKEN`。
 
 <a id="directory-and-preparation"></a>
 

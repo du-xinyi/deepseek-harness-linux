@@ -69,7 +69,7 @@ macOS 安装会创建 `/usr/local/bin/dsh`；目录权限需要时，系统会�
 
 ## 关闭窗口与退出
 
-Linux 关闭主窗口时执行正常退出及任务确认，不安装托盘图标。AppImage 和 deb 从社区更新源自动检查新版，应用菜单提供“检查更新”；下载和安装分别由用户触发。应用内 CLI 注册仍不可用，参见 [Linux 打包](packaging/README.zh.md#local-linux-packages)。
+Linux 关闭主窗口时执行正常退出及任务确认，不安装托盘图标。deb 从社区更新源自动检查新版，应用菜单提供“检查更新”；下载和安装分别由用户触发。应用内 CLI 注册仍不可用，参见 [Linux 打包](packaging/README.zh.md#local-linux-packages)。
 
 关闭主窗口（macOS 的关闭按钮和 ⌘W；Windows 的 ×、Alt+F4 和任务栏"关闭窗口"）会隐藏窗口；Windows 首次隐藏前需要确认。页面和 Host 继续运行，任务不受影响，下次显示时仍是原来的文档，会话、草稿和滚动位置都保留；macOS 全屏窗口先退出全屏再隐藏。macOS 通过 Dock 图标、再次启动或 `dsh://open` 找回窗口，Windows 通过托盘找回。最小化行为不变。进入工作区前关闭欢迎窗口，Windows 上走退出流程，macOS 上应用留在 Dock 中且没有窗口。
 

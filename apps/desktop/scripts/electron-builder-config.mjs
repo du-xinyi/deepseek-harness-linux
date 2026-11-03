@@ -262,7 +262,7 @@ export function createElectronBuilderConfig(
       executableName: 'deepseek-harness',
       icon: fileURLToPath(new URL('../resources/icon.png', import.meta.url)),
       category: 'Development',
-      target: ['AppImage', 'deb'],
+      target: ['deb'],
       desktop: { entry: { StartupWMClass: 'deepseek-harness', MimeType: 'x-scheme-handler/dsh;' } },
     },
     deb: { maintainer: 'DeepSeek Harness contributors' },

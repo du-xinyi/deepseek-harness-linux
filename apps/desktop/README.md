@@ -69,7 +69,7 @@ Command registration is optional after installing Desktop. Use **Manage dsh Comm
 
 ## Closing the window and quitting
 
-On Linux, closing the main window quits through the normal task-confirmation flow; no tray icon is installed. AppImage and deb packages check the community feed automatically and expose Check for Updates in the application menu. Downloads and installation require separate user actions. In-app CLI registration remains unavailable. See [Linux packaging](packaging/README.md#local-linux-packages).
+On Linux, closing the main window quits through the normal task-confirmation flow; no tray icon is installed. deb packages check the community feed automatically and expose Check for Updates in the application menu. Downloads and installation require separate user actions. In-app CLI registration remains unavailable. See [Linux packaging](packaging/README.md#local-linux-packages).
 
 Closing the main window (macOS close button and ⌘W; Windows ×, Alt+F4, and the taskbar Close window command) hides it; Windows asks for acknowledgement before the first hide. The page and the Host keep running, tasks continue, and the next show presents the same document with its session, drafts, and scroll position; a fullscreen macOS window leaves fullscreen before hiding. The window returns through the Dock icon, a second launch, or `dsh://open` on macOS, and through the tray on Windows. Minimize is unchanged. Closing the welcome window before the workspace opens quits on Windows and, on macOS, keeps the application in the Dock without a window.
 

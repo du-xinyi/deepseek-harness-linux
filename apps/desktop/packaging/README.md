@@ -212,7 +212,7 @@ Linux x64 and arm64 packaging requires a Linux host with the matching architectu
 pnpm run package:desktop:linux:x64
 ```
 
-Use `package:desktop:linux:arm64` on arm64. The command retains the product version, builds the locally branded Electron application with its Node, Python and pnpm payloads, and creates AppImage and `.deb` files; it neither reads publication credentials nor uploads artifacts. Outputs live under `apps/desktop/.desktop-build/targets/linux-<arch>/unsigned-artifacts/`. Append `:dir` to produce a directly runnable `linux-unpacked` directory. AppImage requires FUSE 2; systems without FUSE can launch with `--appimage-extract-and-run`. Keep the Chromium sandbox enabled.
+Use `package:desktop:linux:arm64` on arm64. The command retains the product version, builds the locally branded Electron application with its Node, Python and pnpm payloads, and creates `.deb` files; it neither reads publication credentials nor uploads artifacts. Outputs live under `apps/desktop/.desktop-build/targets/linux-<arch>/unsigned-artifacts/`. Append `:dir` to produce a directly runnable `linux-unpacked` directory.
 
 Linux Office previews use the bundled WASM engine. A runtime-only LibreOfficeKit patch preserves engine fallback when Electron ASAR reports a missing directory as `null`. Linux uses a community GitHub Releases update feed and has no in-app CLI registration menu. Closing the window uses normal quit and task confirmation. Packaging needs network access for locked resources; build tools are Node.js, pnpm, Git, a C/C++ compiler, make, Python 3, tar and unzip.
 
@@ -220,7 +220,7 @@ Linux Office previews use the bundled WASM engine. A runtime-only LibreOfficeKit
 
 The default generic feed is `https://github.com/du-xinyi/deepseek-harness-linux/releases/latest/download/`. `DSH_DESKTOP_LINUX_UPDATE_URL` selects another HTTPS directory; HTTP is accepted only on loopback for local checks. The packaged `app-update.yml` seals that address and the selected `DSH_DESKTOP_UPDATE_CHANNEL` (`nightly` by default). Checks do not download software. The user starts a download, then separately confirms installation; active tasks use the existing shutdown confirmation.
 
-AppImage replaces its own file and relaunches, so the file and its directory must be writable. deb uses the system authorization dialog and package manager. An AppImage always selects the AppImage updater even when a combined build carries deb metadata. The first previous Linux package without updater support requires one manual installation of this edition. Real download and temporary AppImage replacement checks run with `pnpm --dir apps/desktop run test:updates:linux` after building and preparing the runtime; they never install a system package.
+Linux uses the deb updater and the system authorization dialog and package manager for installation. The first previous Linux package without updater support requires one manual installation of this edition. Real deb download and installation-confirmation checks run with `pnpm --dir apps/desktop run test:updates:linux` after building and preparing the runtime; they never install a system package.
 
 Build each new release with a higher version extending the product version:
 
@@ -228,7 +228,7 @@ Build each new release with a higher version extending the product version:
 pnpm run package:desktop:linux:x64 --build-version 0.2.2-alpha.2.linux.1
 ```
 
-Publish the generated AppImage, deb and `nightly-linux.yml` together as a GitHub Release; arm64 uses `nightly-linux-arm64.yml`. The manifests include each artifact’s SHA-512. Mark the GitHub Release as latest and not as a GitHub prerelease so the fixed feed URL resolves, even when the application semantic version contains a prerelease field. The manual `Linux Desktop release` Actions workflow builds and verifies both native architectures, then publishes the complete batch. It requires no long-lived upload secret; its publication job uses a repository-scoped `GITHUB_TOKEN` with `contents: write`.
+Publish the generated deb and `nightly-linux.yml` together as a GitHub Release; arm64 uses `nightly-linux-arm64.yml`. The manifests include each artifact’s SHA-512. Mark the GitHub Release as latest and not as a GitHub prerelease so the fixed feed URL resolves, even when the application semantic version contains a prerelease field. The manual `Linux Desktop release` Actions workflow builds and verifies both native architectures, then publishes the complete batch. It requires no long-lived upload secret; its publication job uses a repository-scoped `GITHUB_TOKEN` with `contents: write`.
 
 <a id="directory-and-preparation"></a>
 

@@ -10,12 +10,12 @@ import type { DesktopUpdateState } from '../src/ipc.ts'
 import { DesktopUpdatePreparationError } from '../src/update-error.ts'
 import { zh } from '../src/locale.ts'
 
-const nativeUpdater = vi.hoisted(() => ({ appImage: vi.fn(), system: vi.fn(), packaged: false }))
+const nativeUpdater = vi.hoisted(() => ({ debian: vi.fn(), system: vi.fn(), packaged: false }))
 vi.mock('electron', () => ({ app: { get isPackaged() { return nativeUpdater.packaged }, getVersion: () => '1.0.0' } }))
 vi.mock('electron-updater', () => ({
   default: {
     get autoUpdater() { nativeUpdater.system(); return { autoDownload: true, autoInstallOnAppQuit: true } },
-    AppImageUpdater: class extends EventEmitter { constructor() { super(); nativeUpdater.appImage() } },
+    DebUpdater: class extends EventEmitter { constructor() { super(); nativeUpdater.debian() } },
   },
 }))
 
@@ -84,6 +84,16 @@ function fixture(channel: 'nightly' | 'latest' = 'nightly', version = '1.1.0-alp
 }
 
 describe('desktop update coordinator', () => {
+  it.each(['linux', 'win32', 'darwin'])('selects the deb updater only on Linux (%s)', async (platform) => {
+    vi.stubGlobal('process', { ...process, platform })
+    vi.resetModules()
+    nativeUpdater.debian.mockClear()
+    nativeUpdater.system.mockClear()
+    await import('../src/update-coordinator.ts')
+    expect(nativeUpdater.debian).toHaveBeenCalledTimes(platform === 'linux' ? 1 : 0)
+    expect(nativeUpdater.system).toHaveBeenCalledTimes(platform === 'linux' ? 0 : 1)
+  })
+
   it.each([false, true])('checks the Linux feed only with packaged update metadata (%s)', async (hasFeed) => {
     const directory = mkdtempSync(join(tmpdir(), 'dsh-linux-update-'))
     vi.stubGlobal('process', { ...process, platform: 'linux', resourcesPath: directory })
@@ -101,19 +111,6 @@ describe('desktop update coordinator', () => {
       expect(checkForUpdates).toHaveBeenCalledTimes(hasFeed ? 1 : 0)
     } finally { rmSync(directory, { recursive: true, force: true }) }
   })
-
-  it.each([undefined, '/home/fixture/DeepSeek-Harness.AppImage'])(
-    'selects the AppImage updater before package-type detection when APPIMAGE=%s', async (appImage) => {
-      vi.stubGlobal('process', { ...process, platform: 'linux' })
-      vi.stubEnv('APPIMAGE', appImage)
-      vi.resetModules()
-      nativeUpdater.appImage.mockClear()
-      nativeUpdater.system.mockClear()
-      await import('../src/update-coordinator.ts')
-      expect(nativeUpdater.appImage).toHaveBeenCalledTimes(appImage === undefined ? 0 : 1)
-      expect(nativeUpdater.system).toHaveBeenCalledTimes(appImage === undefined ? 1 : 0)
-    },
-  )
 
   it.each(['stop-failed', 'fullscreen-timeout'] as const)('keeps safe %s diagnostics separate and clears them on an explicit retry', async (kind) => {
     const f = fixture()

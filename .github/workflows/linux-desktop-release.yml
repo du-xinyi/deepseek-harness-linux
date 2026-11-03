@@ -52,7 +52,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: 构建并验证 Linux 安装包
         run: pnpm --dir apps/desktop run "package:linux:$LINUX_ARCH" --build-version "$BUILD_VERSION"
-      - name: 验证更新下载和临时 AppImage 替换
+      - name: 验证 deb 更新下载与安装确认
         run: |
           # Hosted runners restrict unprivileged namespaces; configure Electron's SUID sandbox for this test binary.
           sandbox="apps/desktop/.desktop-build/targets/linux-$LINUX_ARCH/electron/chrome-sandbox"
@@ -65,7 +65,6 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           path: |
-            apps/desktop/.desktop-build/targets/linux-${{ matrix.arch }}/unsigned-artifacts/*.AppImage
             apps/desktop/.desktop-build/targets/linux-${{ matrix.arch }}/unsigned-artifacts/*.deb
             apps/desktop/.desktop-build/targets/linux-${{ matrix.arch }}/unsigned-artifacts/nightly-linux*.yml
 
@@ -92,8 +91,8 @@ jobs:
             exit 1
           fi
           cat > release-notes.md <<'EOF'
-          Linux 社区桌面发行版，提供 AppImage 和 deb。
+          Linux 社区桌面发行版，提供 deb 安装包。
 
-          此版本包含应用内更新检查、SHA-512 下载校验及安装确认。deb 安装需要系统授权；AppImage 需要位于可写目录。
+          此版本包含应用内更新检查、SHA-512 下载校验及安装确认。deb 安装需要系统授权。
           EOF
           gh release create "$tag" release/* --target "$GITHUB_SHA" --latest --prerelease=false --title "Linux Desktop $BUILD_VERSION" --notes-file release-notes.md
