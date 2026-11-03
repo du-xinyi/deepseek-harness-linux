@@ -33,6 +33,7 @@ jobs:
       BUILD_VERSION: ${{ inputs.build_version }}
       LINUX_ARCH: ${{ matrix.arch }}
       DSH_GATE_CONCURRENCY: '1'
+      XZ_DEFAULTS: -T0
       DSH_DESKTOP_LINUX_UPDATE_URL: https://github.com/${{ github.repository }}/releases/latest/download/
       DSH_DESKTOP_UPDATE_CHANNEL: nightly
     steps:
