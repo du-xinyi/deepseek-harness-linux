@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, it } from 'vitest'
 import { resolveLinuxPackageTarget } from '../scripts/package-linux.ts'
 import { createElectronBuilderConfig } from '../scripts/electron-builder-config.mjs'
 import { DEFAULT_LINUX_UPDATE_URL } from '../scripts/linux-update-config.mjs'
+import { desktopBuildVersionPrefix } from '../scripts/desktop-build-version.mjs'
 
 it.each(['x64', 'arm64'] as const)('selects a native Linux %s package', (arch) => {
   expect(resolveLinuxPackageTarget(undefined, 'linux', arch)).toBe(`linux-${arch}`)
@@ -15,14 +17,16 @@ it.each(['x64', 'arm64'] as const)('selects a native Linux %s package', (arch) =
 })
 
 it('embeds a newer Linux build version and independently configured update channel', () => {
+  const { version: productVersion } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }
+  const buildVersion = `${desktopBuildVersionPrefix(productVersion)}linux.1`
   const config = createElectronBuilderConfig({
     DSH_DESKTOP_APP_ID: 'com.deepseek.harness',
-    DSH_DESKTOP_BUILD_VERSION: '0.2.2-alpha.2.linux.1',
+    DSH_DESKTOP_BUILD_VERSION: buildVersion,
     DSH_DESKTOP_LINUX_UPDATE_URL: 'http://127.0.0.1:3089/releases/',
     DSH_DESKTOP_UPDATE_CHANNEL: 'nightly',
     DSH_DESKTOP_UNSIGNED: '1',
   }, 'linux', 'x64')
-  expect(config.extraMetadata).toMatchObject({ version: '0.2.2-alpha.2.linux.1', dshDesktopUpdateChannel: 'nightly' })
+  expect(config.extraMetadata).toMatchObject({ version: buildVersion, dshDesktopUpdateChannel: 'nightly' })
   expect(config.publish).toEqual([{ provider: 'generic', url: 'http://127.0.0.1:3089/releases/', channel: 'nightly' }])
   expect(config.artifactName).toContain('-unsigned.')
   expect(config.detectUpdateChannel).toBe(false)
