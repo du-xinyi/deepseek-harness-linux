@@ -10,8 +10,8 @@ it('uses the Linux distribution repository and nightly channel by default', () =
 })
 
 it.each(['https://example.com/updates', 'http://127.0.0.1:3089/updates', 'http://localhost:3089/updates', 'http://[::1]:3089/updates'])('accepts a feed directory and normalizes its trailing slash: %s', (url) => {
-  expect(resolveLinuxDesktopUpdateConfig({ DSH_DESKTOP_LINUX_UPDATE_URL: url, DSH_DESKTOP_UPDATE_CHANNEL: 'latest' }))
-    .toEqual({ publicUrl: `${url}/`, channel: 'latest' })
+  expect(resolveLinuxDesktopUpdateConfig({ DSH_DESKTOP_LINUX_UPDATE_URL: url, DSH_DESKTOP_UPDATE_CHANNEL: 'stable' }))
+    .toEqual({ publicUrl: `${url}/`, channel: 'stable' })
 })
 
 it.each(['', '/updates/', 'file:///tmp/updates/', 'http://example.com/updates/', 'https://user:secret@example.com/',

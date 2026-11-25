@@ -2,7 +2,7 @@
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { dump } from 'js-yaml'
-import { resolveDesktopUpdateChannel } from './desktop-auto-update-environment.mjs'
+import { resolveDesktopUpdateChannel } from '@deepseek-ai/dsh-desktop-publisher/desktop-auto-update-environment.mjs'
 
 /** Default generic feed served by the Linux distribution repository. */
 export const DEFAULT_LINUX_UPDATE_URL = 'https://github.com/du-xinyi/deepseek-harness-linux/releases/latest/download/'
@@ -10,7 +10,7 @@ export const DEFAULT_LINUX_UPDATE_URL = 'https://github.com/du-xinyi/deepseek-ha
 /**
  * Validate a generic Linux feed directory without URL credentials or request parameters.
  * @param {NodeJS.ProcessEnv} environment - Build settings; HTTP is restricted to loopback test servers.
- * @returns {{ publicUrl: string, channel: 'nightly' | 'latest' }} Normalized feed directory and selected channel.
+ * @returns {{ publicUrl: string, channel: 'nightly' | 'stable' }} Normalized feed directory and selected channel.
  */
 export function resolveLinuxDesktopUpdateConfig(environment = process.env) {
   const value = environment.DSH_DESKTOP_LINUX_UPDATE_URL ?? DEFAULT_LINUX_UPDATE_URL
@@ -29,7 +29,7 @@ export function resolveLinuxDesktopUpdateConfig(environment = process.env) {
 /**
  * Write the configuration consumed by electron-updater in Linux packages.
  * @param {string} resourcesDir - Assembled application resources directory.
- * @param {{ publicUrl: string, channel: 'nightly' | 'latest' }} update - Validated feed selection.
+ * @param {{ publicUrl: string, channel: 'nightly' | 'stable' }} update - Validated feed selection.
  * @param {string} updaterCacheDirName - Electron-builder cache directory for this application.
  * @returns {Promise<void>} Resolves after app-update.yml is written.
  */

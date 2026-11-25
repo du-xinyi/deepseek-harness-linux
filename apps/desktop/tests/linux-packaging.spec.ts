@@ -27,6 +27,7 @@ it('embeds a newer Linux build version and independently configured update chann
     DSH_DESKTOP_UNSIGNED: '1',
   }, 'linux', 'x64')
   expect(config.extraMetadata).toMatchObject({ version: buildVersion, dshDesktopUpdateChannel: 'nightly' })
+  expect(config.extraMetadata).not.toHaveProperty('dshMandatoryUpdatePolicy')
   expect(config.publish).toEqual([{ provider: 'generic', url: 'http://127.0.0.1:3089/releases/', channel: 'nightly' }])
   expect(config.artifactName).toContain('-unsigned.')
   expect(config.detectUpdateChannel).toBe(false)

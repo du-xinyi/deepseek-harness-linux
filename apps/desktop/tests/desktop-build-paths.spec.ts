@@ -1,12 +1,46 @@
 import { join, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { resolveDesktopAutoUpdateTarget } from '@deepseek-ai/dsh-desktop-publisher/desktop-auto-update-environment.mjs'
 import {
   desktopTargetBuildPaths,
   desktopTargetPlatform,
   developmentRuntimeDirectory,
+  isDesktopAutoUpdateTarget,
+  requireDesktopAutoUpdateTarget,
   resolveDesktopBuildTarget,
   resolveDesktopTargetBuildPaths,
+  type DesktopBuildTarget,
 } from '../scripts/desktop-build-paths.mjs'
+
+const BUILD_TARGETS = [
+  { target: 'mac-arm64', autoUpdate: true },
+  { target: 'mac-x64', autoUpdate: true },
+  { target: 'win-x64', autoUpdate: true },
+  { target: 'linux-x64', autoUpdate: false },
+  { target: 'linux-arm64', autoUpdate: false },
+] as const satisfies readonly { target: DesktopBuildTarget; autoUpdate: boolean }[]
+
+describe('desktop auto-update capability', () => {
+  it.each(BUILD_TARGETS)('classifies $target as auto-update=$autoUpdate', ({ target, autoUpdate }) => {
+    expect(isDesktopAutoUpdateTarget(target)).toBe(autoUpdate)
+    if (autoUpdate) expect(requireDesktopAutoUpdateTarget(target, 'retention')).toBe(target)
+    else expect(() => requireDesktopAutoUpdateTarget(target, 'retention')).toThrow(`desktop retention: ${target} packages have no official auto-update feed`)
+  })
+
+  it.each(BUILD_TARGETS)('agrees with the official update feed resolver for $target', ({ target, autoUpdate }) => {
+    const { platform, arch } = desktopTargetPlatform(target)
+    if (autoUpdate) expect(resolveDesktopAutoUpdateTarget(platform, arch)).toBe(target)
+    else expect(() => resolveDesktopAutoUpdateTarget(platform, arch)).toThrow(/unsupported target/u)
+  })
+
+  it.each(BUILD_TARGETS)('keeps build paths for $target regardless of update support', ({ target }) => {
+    expect(desktopTargetBuildPaths(target).root).toContain(join('targets', target))
+  })
+
+  it('rejects names outside the build target set', () => {
+    expect(() => isDesktopAutoUpdateTarget('linux-riscv64' as 'mac-x64')).toThrow(/unsupported target/u)
+  })
+})
 
 describe('desktop build paths', () => {
   it('isolates every mutable build directory by complete target', () => {

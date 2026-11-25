@@ -4,7 +4,7 @@ export const DEFAULT_LINUX_UPDATE_URL: string
 /** Linux update feed validated before packaging. */
 export interface LinuxDesktopUpdateConfig {
   readonly publicUrl: string
-  readonly channel: 'nightly' | 'latest'
+  readonly channel: 'nightly' | 'stable'
 }
 
 /**

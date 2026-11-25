@@ -5,6 +5,32 @@ import { isAbsolute, join, resolve } from 'node:path'
 const APP_ROOT = resolve(import.meta.dirname, '..')
 const BUILD_ROOT = join(APP_ROOT, '.desktop-build')
 const SUPPORTED_TARGETS = new Set(['mac-arm64', 'mac-x64', 'win-x64', 'linux-x64', 'linux-arm64'])
+// Targets served by the official COS update feed and CI retention; Linux updates use its own GitHub Release feed.
+const AUTO_UPDATE_TARGETS = new Set(['mac-arm64', 'mac-x64', 'win-x64'])
+
+/**
+ * Report whether a build target is served by the official Desktop auto-update feed.
+ * @param {'mac-arm64' | 'mac-x64' | 'win-x64' | 'linux-x64' | 'linux-arm64'} target - Supported Desktop target name.
+ * @returns {boolean} True for targets accepted by the official update, retention and publication pipeline.
+ */
+export function isDesktopAutoUpdateTarget(target) {
+  assertSupportedTarget(target)
+  return AUTO_UPDATE_TARGETS.has(target)
+}
+
+/**
+ * Require a build target served by the official Desktop auto-update feed.
+ * @param {'mac-arm64' | 'mac-x64' | 'win-x64' | 'linux-x64' | 'linux-arm64'} target - Supported Desktop target name.
+ * @param {string} operation - Operation named in the rejection.
+ * @returns {'mac-arm64' | 'mac-x64' | 'win-x64'} The same target.
+ * @throws {Error} For Linux targets, which publish through linux-desktop-release.yml instead.
+ */
+export function requireDesktopAutoUpdateTarget(target, operation) {
+  if (!isDesktopAutoUpdateTarget(target)) {
+    throw new Error(`desktop ${operation}: ${target} packages have no official auto-update feed; publish Linux packages with linux-desktop-release.yml`)
+  }
+  return /** @type {'mac-arm64' | 'mac-x64' | 'win-x64'} */ (target)
+}
 
 /**
  * Resolve the fixed build target selected by a packaging environment.

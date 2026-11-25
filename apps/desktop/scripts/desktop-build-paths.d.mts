@@ -1,7 +1,24 @@
-import type { DesktopAutoUpdateTarget } from './desktop-auto-update-environment.mjs'
+import type { DesktopAutoUpdateTarget } from '@deepseek-ai/dsh-desktop-publisher/desktop-auto-update-environment.mjs'
 
 /** Desktop targets, including local Linux packages without an official update feed. */
 export type DesktopBuildTarget = DesktopAutoUpdateTarget | 'linux-x64' | 'linux-arm64'
+
+/**
+ * Report whether a build target is served by the official Desktop auto-update feed.
+ * Linux packages update through their own GitHub Release feed and never enter that pipeline.
+ * @param target - Supported Desktop target name.
+ * @returns True for targets accepted by the official update, retention and publication pipeline.
+ */
+export function isDesktopAutoUpdateTarget(target: DesktopBuildTarget): target is DesktopAutoUpdateTarget
+
+/**
+ * Require a build target served by the official Desktop auto-update feed.
+ * @param target - Supported Desktop target name.
+ * @param operation - Operation named in the rejection.
+ * @returns The same target, narrowed to an official update target.
+ * @throws For Linux targets, which publish through linux-desktop-release.yml instead.
+ */
+export function requireDesktopAutoUpdateTarget(target: DesktopBuildTarget, operation: string): DesktopAutoUpdateTarget
 
 /** Mutable target directories plus shared download and package caches. */
 export interface DesktopTargetBuildPaths {

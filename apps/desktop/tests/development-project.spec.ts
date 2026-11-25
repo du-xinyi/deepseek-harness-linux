@@ -102,6 +102,24 @@ describe('desktop development project', () => {
 
   })
 
+  it.each([
+    ['mac-arm64', 'darwin', 'arm64'], ['mac-x64', 'darwin', 'x64'], ['win-x64', 'win32', 'x64'],
+    ['linux-x64', 'linux', 'x64'], ['linux-arm64', 'linux', 'arm64'],
+  ] as const)('prepares a development project for build target %s', (target, platform, arch) => {
+    const root = temporaryRoot()
+    const cli = join(root, 'cli')
+    const host = join(root, 'host')
+    const hoisted = join(root, 'hoisted')
+    mkdirSync(cli, { recursive: true })
+    mkdirSync(join(host, 'lib'), { recursive: true })
+    mkdirSync(hoisted)
+    writeFileSync(join(cli, 'package.json'), JSON.stringify({ name: '@deepseek-ai/dsh', version: '1.2.3' }))
+    writeFileSync(join(host, 'package.json'), JSON.stringify({ name: '@deepseek-ai/dsh-desktop-host', version: '1.2.3' }))
+    writeFileSync(join(host, 'lib/index.js'), '')
+    const project = prepareDevelopmentProject({ projectDir: join(root, 'runtime'), cliDir: cli, hostDir: host, dependencyDir: hoisted, release: release(), target })
+    expect(JSON.parse(readFileSync(join(project, 'desktop-runtime.json'), 'utf8'))).toMatchObject({ platform, arch })
+  })
+
   it('rejects a CLI package from another release', () => {
     const root = temporaryRoot()
     const cli = join(root, 'apps', 'cli')
