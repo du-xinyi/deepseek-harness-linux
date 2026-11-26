@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import updaterModule from 'electron-updater'
 import { DesktopUpdateCoordinator } from '../../lib/types/update-coordinator.js'
-import { DesktopUpdateHttpExecutor } from '../../lib/types/update-http-executor.js'
+import { DesktopUpdateHttpExecutor } from '../../lib/types/updates/electron-updater/http-executor.js'
 
 const root = process.env.DSH_LINUX_UPDATE_TEST_ROOT
 assert.ok(root, 'The launcher must allocate an isolated directory')
