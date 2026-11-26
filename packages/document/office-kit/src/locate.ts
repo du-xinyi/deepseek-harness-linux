@@ -1,5 +1,5 @@
 /** Locate LibreOffice Kit and its engine packages from the consumer's Kit installation without module hooks. */
-import { lstatSync } from 'node:fs'
+import { lstatSync, type BigIntStats, type Stats } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 
@@ -41,6 +41,9 @@ export function resolveKitModule(lookupKitEntry: KitEntryLookup): KitModuleResol
   return { kind: 'available', entry: located.entry, resolveEnginePackage: createEnginePackageResolver(located.entry) }
 }
 
+/** Electron's ASAR filesystem reports an absent entry as null, outside Node's declared undefined. */
+const archiveLstat: (path: string) => Stats | BigIntStats | null | undefined = path => lstatSync(path, { throwIfNoEntry: false })
+
 /**
  * Anchor engine resolution to the Kit entry actually used by the consumer, not this package's installation.
  * Each returned callback retains its own Node resolver and installs no module hooks.
@@ -60,9 +63,10 @@ export function createEnginePackageResolver(kitEntry: string | URL): EnginePacka
       manifest = fromKit.resolve(`${name}/package.json`)
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'MODULE_NOT_FOUND') {
-        const installed = (fromKit.resolve.paths(name) ?? []).some(directory =>
-          lstatSync(join(directory, name), { throwIfNoEntry: false }) !== undefined,
-        )
+        const installed = (fromKit.resolve.paths(name) ?? []).some((directory) => {
+          const entry = archiveLstat(join(directory, name))
+          return entry !== undefined && entry !== null
+        })
         if (installed) throw new Error(`Installed LibreOfficeKit package is incomplete: ${name}. Reinstall the package.`, { cause: error })
       }
       throw error

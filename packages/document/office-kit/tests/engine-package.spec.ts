@@ -1,19 +1,23 @@
 /** Engine resolution distinguishes missing installations from incomplete ones and preserves ASAR asset paths. */
-import { lstatSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { lstatSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync, type BigIntStats, type PathLike, type Stats, type StatSyncOptions } from 'node:fs'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
-import { afterEach, expect, it, onTestFinished, vi } from 'vitest'
+import { afterEach, expect, it, onTestFinished, vi, type Mock } from 'vitest'
 import { createEnginePackageResolver } from '../src/locate.ts'
 
 vi.mock('node:module', async (original) => {
   const actual = await original<typeof import('node:module')>()
   return { createRequire: vi.fn(actual.createRequire) }
 })
+/** Node's declared lstat result widened by the null Electron's ASAR filesystem returns for an absent entry. */
+type ArchiveAwareLstat = (path: PathLike, options?: StatSyncOptions) => Stats | BigIntStats | null | undefined
+const fsDouble = vi.hoisted((): { lstat?: Mock<ArchiveAwareLstat> } => ({}))
 vi.mock('node:fs', async (original) => {
   const actual = await original<typeof import('node:fs')>()
-  return { ...actual, lstatSync: vi.fn(actual.lstatSync) }
+  fsDouble.lstat = vi.fn<ArchiveAwareLstat>((path, options) => actual.lstatSync(path, options))
+  return { ...actual, lstatSync: fsDouble.lstat }
 })
 const { createRequire: nodeCreateRequire } = await vi.importActual<typeof import('node:module')>('node:module')
 
@@ -118,6 +122,16 @@ it('preserves Node missing errors when the name has no package search paths', ()
   expect(error).toMatchObject({ code: 'MODULE_NOT_FOUND' })
   expect(error).toBe(fixture.resolve.mock.results[0]?.value)
   expect(lstatSync).not.toHaveBeenCalled()
+})
+
+it('treats the null an Electron ASAR returns for an absent engine as missing, permitting WASM fallback', () => {
+  const fixture = engineTree()
+  if (fsDouble.lstat === undefined) throw new Error('node:fs must be mocked')
+  fsDouble.lstat.mockImplementation(() => null)
+  const error = thrownBy(() => fixture.resolveEnginePackage(fixture.name))
+  expect(error).toMatchObject({ code: 'MODULE_NOT_FOUND' })
+  expect(error).toBe(fixture.resolve.mock.results[0]?.value)
+  expect(lstatSync).toHaveBeenCalled()
 })
 
 it('propagates permission errors while checking the kit installation', () => {
